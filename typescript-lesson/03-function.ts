@@ -10,3 +10,5 @@ interface ISum {
 
 const sum: SumType = (a: number, b: number) => a + b
 const sum1: ISum = (a: number, b: number) => a + b
+
+export {}
