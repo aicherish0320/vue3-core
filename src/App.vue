@@ -1,10 +1,10 @@
 <template>
-  <nav>
-    <router-link to="/">Home</router-link> |
-    <router-link to="/mine">mine</router-link>
-    <router-link to="/profile">profile</router-link>
-  </nav>
   <router-view />
+  <van-tabbar route>
+    <van-tabbar-item icon="home-o" to="/">首页</van-tabbar-item>
+    <van-tabbar-item icon="search" to="/mine">我的</van-tabbar-item>
+    <van-tabbar-item icon="setting-o" to="/profile">个人中心</van-tabbar-item>
+  </van-tabbar>
 </template>
 
 <style lang="scss"></style>
