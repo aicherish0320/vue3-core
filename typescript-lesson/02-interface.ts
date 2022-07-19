@@ -18,3 +18,5 @@ const sc: ISc = {
   age: 21,
   type: '前端'
 }
+
+export {}
