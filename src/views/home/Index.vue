@@ -1,17 +1,21 @@
 <template>
-  {{ category }}
-  <HeaderView></HeaderView>
+  <HeaderView
+    :category="category"
+    @setCurrentCategory="setCurrentCategory"
+  ></HeaderView>
   <SwiperView></SwiperView>
   <ListView></ListView>
 </template>
 
 <script lang="ts">
 import { IGlobalState } from '@/store'
-import { computed, defineComponent } from 'vue'
+import { defineComponent } from 'vue'
 import { useStore } from 'vuex'
 import HeaderView from './HeaderView.vue'
 import ListView from './ListView.vue'
 import SwiperView from './SwiperView.vue'
+import useCategory from './useCategory'
+
 export default defineComponent({
   components: {
     HeaderView,
@@ -20,10 +24,12 @@ export default defineComponent({
   },
   setup() {
     const store = useStore<IGlobalState>()
-    const category = computed(() => store.state.home.currentCategory)
+
+    const { category, setCurrentCategory } = useCategory(store)
 
     return {
-      category
+      category,
+      setCurrentCategory
     }
   }
 })

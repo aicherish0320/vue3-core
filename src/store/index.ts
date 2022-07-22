@@ -1,6 +1,6 @@
 import { createStore } from 'vuex'
-
-import home, { IHomeState } from './modules/home'
+import { IHomeState } from '@/typings/home'
+import home from './modules/home'
 
 export interface IGlobalState {
   home: IHomeState

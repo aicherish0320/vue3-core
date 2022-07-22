@@ -1,32 +1,7 @@
-import { IGlobalState } from './../index'
-import { CATEGORY_TYPES } from '@/typings/home'
 import { Module } from 'vuex'
-
-interface ISlider {
-  url: string
-}
-
-interface ILesson {
-  title: string
-  video: string
-  poster: string
-  price: number
-  category?: string
-}
-
-interface ILessons {
-  hasMore: boolean
-  loading: boolean
-  offset: number
-  limit: number
-  list: ILesson[]
-}
-
-export interface IHomeState {
-  currentCategory: CATEGORY_TYPES
-  sliders: ISlider[]
-  lessons: ILessons
-}
+import { IGlobalState } from '@/store/index'
+import { CATEGORY_TYPES, IHomeState } from '@/typings/home'
+import * as Types from '@/store/actionTypes'
 
 const state: IHomeState = {
   currentCategory: CATEGORY_TYPES.ALL,
@@ -42,7 +17,12 @@ const state: IHomeState = {
 
 const home: Module<IHomeState, IGlobalState> = {
   namespaced: true,
-  state
+  state,
+  mutations: {
+    [Types.SET_CATEGORY](state, payload: CATEGORY_TYPES) {
+      state.currentCategory = payload
+    }
+  }
 }
 
 export default home
