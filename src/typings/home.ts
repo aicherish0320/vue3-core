@@ -5,7 +5,7 @@ export enum CATEGORY_TYPES {
   NODE
 }
 
-interface ISlider {
+export interface ISlider {
   url: string
 }
 

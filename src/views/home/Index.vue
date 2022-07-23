@@ -3,7 +3,12 @@
     :category="category"
     @setCurrentCategory="setCurrentCategory"
   ></HeaderView>
-  <SwiperView></SwiperView>
+  <Suspense>
+    <template #default>
+      <SwiperView></SwiperView>
+    </template>
+    <template #fallback> loading </template>
+  </Suspense>
   <ListView></ListView>
 </template>
 
