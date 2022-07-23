@@ -9,7 +9,7 @@
     </template>
     <template #fallback> loading </template>
   </Suspense>
-  <ListView></ListView>
+  <ListView :lessonList="lessonList"></ListView>
 </template>
 
 <script lang="ts">
@@ -20,6 +20,7 @@ import HeaderView from './HeaderView.vue'
 import ListView from './ListView.vue'
 import SwiperView from './SwiperView.vue'
 import useCategory from './useCategory'
+import useLessonList from './useLessonList'
 
 export default defineComponent({
   components: {
@@ -31,10 +32,12 @@ export default defineComponent({
     const store = useStore<IGlobalState>()
 
     const { category, setCurrentCategory } = useCategory(store)
+    const { lessonList } = useLessonList(store)
 
     return {
       category,
-      setCurrentCategory
+      setCurrentCategory,
+      lessonList
     }
   }
 })

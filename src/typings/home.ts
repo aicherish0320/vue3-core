@@ -9,15 +9,15 @@ export interface ISlider {
   url: string
 }
 
-interface ILesson {
+export interface ILesson {
   title: string
   video: string
   poster: string
   price: number
-  category?: string
+  category?: number
 }
 
-interface ILessons {
+export interface ILessons {
   hasMore: boolean
   loading: boolean
   offset: number
