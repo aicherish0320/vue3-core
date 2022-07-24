@@ -6,8 +6,6 @@
 
   function computed() { }
 
-  function effect() { }
-
   const isObject = (val) => typeof val === 'object' && val !== null;
   const isArray = (val) => Array.isArray(val);
   const isInteger = (key) => parseInt(key, 10) + '' === key;
@@ -15,9 +13,93 @@
   const hasOwn = (val, key) => hasOwnProperty.call(val, key);
   const hasChanged = (value, oldValue) => value !== oldValue;
 
+  function effect(fn, options = {}) {
+      const effect = createReactiveEffect(fn, options);
+      if (!options.lazy) {
+          effect();
+      }
+      return effect;
+  }
+  let activeEffect;
+  let uid = 0;
+  const effectStack = [];
+  function createReactiveEffect(fn, options) {
+      const effect = function () {
+          if (!effectStack.includes(effect)) {
+              try {
+                  activeEffect = effect;
+                  effectStack.push(activeEffect);
+                  return fn();
+              }
+              catch (error) {
+              }
+              finally {
+                  effectStack.pop();
+                  activeEffect = effectStack[effectStack.length - 1];
+              }
+          }
+      };
+      effect.id = uid++;
+      effect.deps = [];
+      effect.options = options;
+      return effect;
+  }
+  // { object: { key: [effect1, effect2] } }
+  const targetMap = new WeakMap();
+  function track(target, key) {
+      if (!activeEffect)
+          return;
+      let depsMap = targetMap.get(target);
+      if (!depsMap) {
+          targetMap.set(target, (depsMap = new Map()));
+      }
+      let dep = depsMap.get(key);
+      if (!dep) {
+          depsMap.set(key, (dep = new Set()));
+      }
+      if (!dep.has(activeEffect)) {
+          dep.add(activeEffect);
+          activeEffect.deps.push(key);
+      }
+  }
+  function trigger(target, type, key, value, oldValue) {
+      debugger;
+      const depsMap = targetMap.get(target);
+      if (!depsMap)
+          return;
+      const run = (effects) => {
+          if (effects) {
+              effects.forEach((effect) => effect());
+          }
+      };
+      if (key === 'length' && isArray(target)) {
+          depsMap.forEach((dep, key) => {
+              if (key === 'length' || key >= value) {
+                  run(dep);
+              }
+          });
+      }
+      else {
+          if (key) {
+              run(depsMap.get(key));
+          }
+          switch (type) {
+              case 'add':
+                  if (isArray(target)) {
+                      if (isInteger(key)) {
+                          run(depsMap.get('length'));
+                      }
+                  }
+                  break;
+          }
+      }
+  }
+
   function createGetter() {
       return function get(target, key, receiver) {
+          console.log('key >>> ', key);
           const ret = Reflect.get(target, key, receiver);
+          track(target, key);
           if (isObject(ret)) {
               return reactive(ret);
           }
@@ -33,10 +115,10 @@
               : hasOwn(target, key);
           const ret = Reflect.set(target, key, value, receiver);
           if (!hadKey) {
-              console.log('新增');
+              trigger(target, 'add', key, value);
           }
           else if (hasChanged(value, oldValue)) {
-              console.log('修改属性');
+              trigger(target, 'set', key, value);
           }
           return ret;
       };

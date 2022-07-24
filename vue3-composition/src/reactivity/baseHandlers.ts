@@ -5,10 +5,14 @@ import {
   hasOwn,
   hasChanged
 } from './../shared/index'
+import { track, trigger } from './effect'
 import { reactive } from './reactive'
 function createGetter() {
   return function get(target, key, receiver) {
+    console.log('key >>> ', key)
+
     const ret = Reflect.get(target, key, receiver)
+    track(target, key)
 
     if (isObject(ret)) {
       return reactive(ret)
@@ -29,9 +33,9 @@ function createSetter() {
     const ret = Reflect.set(target, key, value, receiver)
 
     if (!hadKey) {
-      console.log('新增')
+      trigger(target, 'add', key, value)
     } else if (hasChanged(value, oldValue)) {
-      console.log('修改属性')
+      trigger(target, 'set', key, value, oldValue)
     }
 
     return ret
