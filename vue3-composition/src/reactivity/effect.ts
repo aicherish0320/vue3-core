@@ -54,7 +54,6 @@ export function track(target, key) {
 }
 
 export function trigger(target, type, key, value?, oldValue?) {
-  debugger
   const depsMap = targetMap.get(target)
   if (!depsMap) return
 

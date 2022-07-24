@@ -14,14 +14,14 @@
   <script>
     const { reactive, effect } = VueReactivity
 
-    const state = reactive([1, 2, 3])
+    const state = reactive({ count: 1 })
 
     effect(() => {
-      app.innerHTML = state
+      app.innerHTML = state.count
     })
 
     setTimeout(() => {
-      state[10] = 1
+      state.count = 100
     }, 1000)
     // setInterval(() => {
     //   state.count++
