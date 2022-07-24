@@ -1,0 +1,1 @@
+{"version":3,"file":"vue.js","sources":["../src/index.ts"],"sourcesContent":["const msg: string = 'Hello'\r\nconsole.log('Hello >>> ', msg)\r\n"],"names":[],"mappings":";;;;;CAAA,MAAM,GAAG,GAAW,OAAO,CAAA;CAC3B,OAAO,CAAC,GAAG,CAAC,YAAY,EAAE,GAAG,CAAC;;;;;;"}
