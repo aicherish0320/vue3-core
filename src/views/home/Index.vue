@@ -1,20 +1,23 @@
 <template>
-  <HeaderView
-    :category="category"
-    @setCurrentCategory="setCurrentCategory"
-  ></HeaderView>
-  <Suspense>
-    <template #default>
-      <SwiperView></SwiperView>
-    </template>
-    <template #fallback> loading </template>
-  </Suspense>
-  <ListView :lessonList="lessonList"></ListView>
+  <div class="home-container" ref="homeViewRef">
+    <HeaderView
+      :category="category"
+      @setCurrentCategory="setCurrentCategory"
+    ></HeaderView>
+    <Suspense>
+      <template #default>
+        <SwiperView></SwiperView>
+      </template>
+      <template #fallback> loading </template>
+    </Suspense>
+    <ListView :lessonList="lessonList"></ListView>
+  </div>
 </template>
 
 <script lang="ts">
+import useLoadMore from '@/hooks/useLoadMore'
 import { IGlobalState } from '@/store'
-import { defineComponent } from 'vue'
+import { defineComponent, ref } from 'vue'
 import { useStore } from 'vuex'
 import HeaderView from './HeaderView.vue'
 import ListView from './ListView.vue'
@@ -34,13 +37,22 @@ export default defineComponent({
     const { category, setCurrentCategory } = useCategory(store)
     const { lessonList } = useLessonList(store)
 
+    const homeViewRef = ref<null | HTMLElement>(null)
+    useLoadMore(homeViewRef)
+
     return {
       category,
       setCurrentCategory,
-      lessonList
+      lessonList,
+      homeViewRef
     }
   }
 })
 </script>
 
-<style scoped></style>
+<style scoped>
+.home-container {
+  overflow-y: auto;
+  height: calc(100vh - 50px);
+}
+</style>

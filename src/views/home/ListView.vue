@@ -46,8 +46,4 @@ export default defineComponent({
 })
 </script>
 
-<style scoped lang="scss">
-.list-view {
-  padding-bottom: 50px;
-}
-</style>
+<style scoped lang="scss"></style>
