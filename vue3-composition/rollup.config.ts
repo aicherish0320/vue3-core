@@ -4,7 +4,6 @@ import replace from '@rollup/plugin-replace'
 import serve from 'rollup-plugin-serve'
 import path from 'path'
 
-
 export default {
   input: 'src/index.ts',
   output: {
@@ -24,7 +23,7 @@ export default {
       'process.env.NODE_ENV': JSON.stringify('development')
     }),
     serve({
-      open: true,
+      // open: true,
       openPage: '/public/index.html',
       port: 3300,
       contentBase: ''

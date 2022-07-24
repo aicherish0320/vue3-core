@@ -1,2 +1,1 @@
-const msg: string = 'Hello'
-console.log('Hello >>> ', msg)
+export * from './reactivity/index'
