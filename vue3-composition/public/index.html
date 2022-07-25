@@ -10,21 +10,23 @@
     <div id="app"></div>
   </body>
   <!-- <script src="../node_modules/@vue/reactivity/dist/reactivity.global.js"></script> -->
+  <!-- <script src="../node_modules/vue/dist/vue.global.js"></script> -->
   <script src="../dist/vue.js"></script>
   <script>
-    const { reactive, effect } = VueReactivity
+    const { createApp, reactive, h } = Vue
 
-    const state = reactive({ count: 1 })
+    const App = {
+      setup() {
+        const state = reactive({
+          foo: 'foo',
+          count: 1
+        })
+        return () => {
+          return h('h1', { style: { color: 'red' } }, state.foo)
+        }
+      }
+    }
 
-    effect(() => {
-      app.innerHTML = state.count
-    })
-
-    setTimeout(() => {
-      state.count = 100
-    }, 1000)
-    // setInterval(() => {
-    //   state.count++
-    // }, 1000)
+    createApp(App).mount('#app')
   </script>
 </html>
