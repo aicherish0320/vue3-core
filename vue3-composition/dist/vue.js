@@ -12,6 +12,8 @@
   const hasOwnProperty = Object.prototype.hasOwnProperty;
   const hasOwn = (val, key) => hasOwnProperty.call(val, key);
   const hasChanged = (value, oldValue) => value !== oldValue;
+  const isString = (val) => typeof val === 'string';
+  const isFunction = (val) => typeof val === 'function';
 
   function effect(fn, options = {}) {
       const effect = createReactiveEffect(fn, options);
@@ -149,15 +151,27 @@
   function ref() { }
 
   function createVNode(type, props = {}, children = null) {
-      ({
+      const shapeFlag = isString(type)
+          ? 1 /* shapeFlags.ELEMENT */
+          : isObject(type)
+              ? 4 /* shapeFlags.STATEFUL_COMPONENT */
+              : 0;
+      const vNode = {
           type,
           props,
           children,
           component: null,
           el: null,
           key: props.key,
-          shapeFlag: true // 表示虚拟节点的类型：元素、组件
-      });
+          shapeFlag // 表示虚拟节点的类型：元素、组件
+      };
+      if (isArray(children)) {
+          vNode.shapeFlag |= 16 /* ShapeFlags.ARRAY_CHILDREN */;
+      }
+      else {
+          vNode.shapeFlag |= 8 /* ShapeFlags.TEXT_CHILDREN */;
+      }
+      return vNode;
   }
 
   function createAppAPI(render) {
@@ -172,11 +186,120 @@
       };
   }
 
+  function createComponentInstance(vNode) {
+      const instance = {
+          type: vNode.type,
+          props: {},
+          vNode,
+          render: null,
+          setupState: null,
+          isMounted: false // 默认组件没有挂载
+      };
+      return instance;
+  }
+  const setupComponent = (instance) => {
+      setupStatefulComponent(instance);
+  };
+  function setupStatefulComponent(instance) {
+      const Component = instance.type;
+      const { setup } = Component;
+      if (setup) {
+          const setupResult = setup();
+          handleSetupResult(instance, setupResult);
+      }
+  }
+  function handleSetupResult(instance, setupResult) {
+      if (isFunction(setupResult)) {
+          instance.render = setupResult;
+      }
+      else {
+          instance.setupState = setupResult;
+      }
+      finishComponentSetup(instance);
+  }
+  function finishComponentSetup(instance) {
+      const Component = instance.type;
+      if (Component.render) {
+          instance.render = Component.render;
+      }
+      else if (!instance.render) ;
+  }
+
   function createRenderer(options) {
-      return baseCreateRenderer();
+      return baseCreateRenderer(options);
   }
   function baseCreateRenderer(options) {
-      const render = (vNode, container) => { };
+      const render = (vNode, container) => {
+          patch(null, vNode, container);
+      };
+      const mountElement = (vNode, container) => {
+          const { createElement: hostCreateElement, patchProp: hostPatchProp, setElementText: hostSetElementText, insert: hostInsert, remove: hostRemove } = options;
+          const { shapeFlag, props } = vNode;
+          let el = (vNode.el = hostCreateElement(vNode.type));
+          // 创建儿子
+          if (shapeFlag & 8 /* ShapeFlags.TEXT_CHILDREN */) {
+              hostSetElementText(el, vNode.children);
+          }
+          else if (shapeFlag & 16 /* ShapeFlags.ARRAY_CHILDREN */) {
+              mountChildren(vNode.children, el);
+          }
+          if (props) {
+              for (const key in props) {
+                  hostPatchProp(el, key, null, props[key]);
+              }
+          }
+          hostInsert(el, container);
+      };
+      const mountChildren = (children, container) => {
+          for (let i = 0; i < children.length; i++) {
+              patch(null, children[i], container);
+          }
+      };
+      // 组件的挂载逻辑
+      const mountComponent = (initialVNode, container) => {
+          // 1. 创建组件实例 2. 找到组件的 render 方法 3. 执行 render
+          const instance = (initialVNode.component =
+              createComponentInstance(initialVNode));
+          //  找到组件的 setup 方法
+          setupComponent(instance);
+          // 给组件创建一个 effect
+          setupRenderEffect(instance, initialVNode, container);
+      };
+      function setupRenderEffect(instance, initialVNode, container) {
+          effect(() => {
+              if (!instance.isMounted) {
+                  // 渲染
+                  const subTree = (instance.subTree = instance.render());
+                  patch(null, subTree, container);
+                  instance.isMounted = true;
+              }
+              else {
+                  // 更新
+                  const prev = instance.subTree;
+                  let next = instance.render();
+                  console.log('prev >>> ', prev, next);
+              }
+          });
+      }
+      const processElement = (n1, n2, container) => {
+          if (!n1) {
+              mountElement(n2, container);
+          }
+      };
+      const processComponent = (n1, n2, container) => {
+          if (!n1) {
+              mountComponent(n2, container);
+          }
+      };
+      const patch = (n1, n2, container) => {
+          const { shapeFlag } = n2;
+          if (shapeFlag & 1 /* ShapeFlags.ELEMENT */) {
+              processElement(n1, n2, container);
+          }
+          else if (shapeFlag & 4 /* ShapeFlags.STATEFUL_COMPONENT */) {
+              processComponent(n1, n2, container);
+          }
+      };
       return {
           createApp: createAppAPI(render)
       };
@@ -251,16 +374,16 @@
       }
   }
 
-  Object.assign(Object.assign({}, nodeOps), { patchProp });
+  const renderOptions = Object.assign(Object.assign({}, nodeOps), { patchProp });
   function ensureRenderer() {
-      return createRenderer();
+      return createRenderer(renderOptions);
   }
   function createApp(rootComponent) {
-      console.log(rootComponent);
       // 根据组件创建一个渲染器
       const app = ensureRenderer().createApp(rootComponent);
       const { mount } = app;
       app.mount = function (container) {
+          container = document.querySelector(container);
           container.innerHTML = '';
           mount(container);
       };

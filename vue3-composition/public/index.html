@@ -21,6 +21,9 @@
           foo: 'foo',
           count: 1
         })
+        setTimeout(() => {
+          state.foo = 'foooo'
+        }, 1000)
         return () => {
           return h('h1', { style: { color: 'red' } }, state.foo)
         }

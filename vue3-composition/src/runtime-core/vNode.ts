@@ -15,7 +15,7 @@ export function createVNode(type, props: any = {}, children = null) {
     component: null, // 组件实例
     el: null,
     key: props.key,
-    shapeFlag: true // 表示虚拟节点的类型：元素、组件
+    shapeFlag // 表示虚拟节点的类型：元素、组件
   }
 
   if (isArray(children)) {
@@ -23,4 +23,6 @@ export function createVNode(type, props: any = {}, children = null) {
   } else {
     vNode.shapeFlag |= ShapeFlags.TEXT_CHILDREN
   }
+
+  return vNode
 }
