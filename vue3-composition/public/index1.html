@@ -5,31 +5,27 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
-    <script src="../dist/vue.js"></script>
   </head>
   <body>
     <div id="app"></div>
   </body>
+  <!-- <script src="../node_modules/@vue/reactivity/dist/reactivity.global.js"></script> -->
+  <!-- <script src="../node_modules/vue/dist/vue.global.js"></script> -->
+  <script src="../dist/vue.js"></script>
   <script>
     const { createApp, reactive, h } = Vue
 
     const App = {
       setup() {
         const state = reactive({
-          flag: true
+          foo: 'foo',
+          count: 1
         })
-
         setTimeout(() => {
-          state.flag = !state.flag
-        }, 2000)
-
+          state.foo = 'foooo'
+        }, 1000)
         return () => {
-          return state.flag
-            ? h('div', { style: { color: 'red' } }, 'hello')
-            : h('div', { style: { color: 'cyan' } }, [
-                h('h1', {}, '雷浩啊'),
-                h('p', {}, '中意累')
-              ])
+          return h('h1', { style: { color: 'red' } }, state.foo)
         }
       }
     }

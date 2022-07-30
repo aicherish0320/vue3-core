@@ -232,8 +232,8 @@
       const render = (vNode, container) => {
           patch(null, vNode, container);
       };
+      const { createElement: hostCreateElement, patchProp: hostPatchProp, setElementText: hostSetElementText, insert: hostInsert, remove: hostRemove } = options;
       const mountElement = (vNode, container) => {
-          const { createElement: hostCreateElement, patchProp: hostPatchProp, setElementText: hostSetElementText, insert: hostInsert, remove: hostRemove } = options;
           const { shapeFlag, props } = vNode;
           let el = (vNode.el = hostCreateElement(vNode.type));
           // 创建儿子
@@ -254,6 +254,65 @@
           for (let i = 0; i < children.length; i++) {
               patch(null, children[i], container);
           }
+      };
+      const patchProps = (oldProps, newProps, el) => {
+          if (oldProps !== newProps) {
+              // 新的属性 需要覆盖老的
+              for (const key in newProps) {
+                  const prev = oldProps[key];
+                  const next = newProps[key];
+                  if (prev !== next) {
+                      hostPatchProp(el, key, prev, next);
+                  }
+              }
+              // 老的有属性 新的没有 将老的删掉
+              for (const key in oldProps) {
+                  if (!(key in newProps)) {
+                      hostPatchProp(el, key, oldProps[key], null);
+                  }
+              }
+          }
+      };
+      const patchChildren = (n1, n2, el) => {
+          const c1 = n1.children;
+          const c2 = n2.children;
+          const prevShapeFlag = n1.shapeFlag;
+          const shapeFlag = n2.shapeFlag;
+          // 文本元素
+          if (shapeFlag & 8 /* ShapeFlags.TEXT_CHILDREN */) {
+              // 老的是文本 新的是文本 -> 新的覆盖老的
+              // 老的是数组 新的是文本 -> 覆盖掉老的
+              if (c2 !== c1) {
+                  hostSetElementText(el, c2);
+              }
+          }
+          else {
+              // 新的是数组
+              if (prevShapeFlag & 16 /* ShapeFlags.ARRAY_CHILDREN */) ;
+              else {
+                  // 老的可能是文本
+                  if (prevShapeFlag & 8 /* ShapeFlags.TEXT_CHILDREN */) {
+                      // 移除老文本
+                      hostSetElementText(el, '');
+                  }
+                  if (shapeFlag & 16 /* ShapeFlags.ARRAY_CHILDREN */) {
+                      // 去把新的元素进行挂载
+                      for (let i = 0; i < c2.length; i++) {
+                          patch(null, c2[i], el);
+                      }
+                  }
+              }
+          }
+          // 老的是文本 新的是数组 -> 移除老的文本 生成新的节点塞进去
+          // 老的是数组 新的是数组 -> diff 算法
+      };
+      const patchElement = (n1, n2, container) => {
+          let el = (n2.el = n1.el);
+          const oldProps = n1.props || {};
+          const newProps = n2.props || {};
+          patchProps(oldProps, newProps, el);
+          // 比较children
+          patchChildren(n1, n2, el);
       };
       // 组件的挂载逻辑
       const mountComponent = (initialVNode, container) => {
@@ -277,7 +336,7 @@
                   // 更新
                   const prev = instance.subTree;
                   let next = instance.render();
-                  console.log('prev >>> ', prev, next);
+                  patch(prev, next, container);
               }
           });
       }
@@ -285,14 +344,22 @@
           if (!n1) {
               mountElement(n2, container);
           }
+          else {
+              patchElement(n1, n2);
+          }
       };
       const processComponent = (n1, n2, container) => {
           if (!n1) {
               mountComponent(n2, container);
           }
       };
+      const isSameVNodeType = (n1, n2) => n1.type === n2.type && n1.key === n2.key;
       const patch = (n1, n2, container) => {
           const { shapeFlag } = n2;
+          if (n1 && !isSameVNodeType(n1, n2)) {
+              hostRemove(n1.el);
+              n1 = null;
+          }
           if (shapeFlag & 1 /* ShapeFlags.ELEMENT */) {
               processElement(n1, n2, container);
           }
