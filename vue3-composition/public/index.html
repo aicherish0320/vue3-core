@@ -25,10 +25,29 @@
 
         return () => {
           return state.flag
-            ? h('div', { style: { color: 'red' } }, 'hello')
-            : h('div', { style: { color: 'cyan' } }, [
-                h('h1', {}, '雷浩啊'),
-                h('p', {}, '中意累')
+            ? h('ul', { style: { color: 'red' } }, [
+                h('li', { key: 'A' }, 'A'),
+                h('li', { key: 'B' }, 'B'),
+
+                h('li', { key: 'C' }, 'C'),
+                h('li', { key: 'D' }, 'D'),
+                h('li', { key: 'E' }, 'E'),
+                h('li', { key: 'Q' }, 'Q'),
+
+                h('li', { key: 'F' }, 'F'),
+                h('li', { key: 'G' }, 'G')
+              ])
+            : h('ul', { style: { color: 'cyan' } }, [
+                h('li', { key: 'A' }, 'A'),
+                h('li', { key: 'B' }, 'B'),
+
+                h('li', { key: 'E' }, 'E'),
+                h('li', { key: 'D' }, 'D'),
+                h('li', { key: 'C' }, 'C'),
+                h('li', { key: 'H' }, 'H'),
+
+                h('li', { key: 'F' }, 'F'),
+                h('li', { key: 'G' }, 'G')
               ])
         }
       }

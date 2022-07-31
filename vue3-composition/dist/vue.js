@@ -233,7 +233,7 @@
           patch(null, vNode, container);
       };
       const { createElement: hostCreateElement, patchProp: hostPatchProp, setElementText: hostSetElementText, insert: hostInsert, remove: hostRemove } = options;
-      const mountElement = (vNode, container) => {
+      const mountElement = (vNode, container, anchor) => {
           const { shapeFlag, props } = vNode;
           let el = (vNode.el = hostCreateElement(vNode.type));
           // 创建儿子
@@ -248,7 +248,7 @@
                   hostPatchProp(el, key, null, props[key]);
               }
           }
-          hostInsert(el, container);
+          hostInsert(el, container, anchor);
       };
       const mountChildren = (children, container) => {
           for (let i = 0; i < children.length; i++) {
@@ -273,6 +273,97 @@
               }
           }
       };
+      const patchKeyChildren = (c1, c2, el) => {
+          // 内部优化策略
+          let i = 0;
+          let e1 = c1.length - 1;
+          let e2 = c2.length - 1;
+          // abc -> abde
+          while (i <= e1 && i <= e2) {
+              const n1 = c1[i];
+              const n2 = c2[i];
+              if (isSameVNodeType(n1, n2)) {
+                  patch(n1, n2, el);
+              }
+              else {
+                  break;
+              }
+              i++;
+          }
+          // abc -> eabc
+          while (i <= e1 && i <= e2) {
+              const n1 = c1[e1];
+              const n2 = c2[e2];
+              if (isSameVNodeType(n1, n2)) {
+                  patch(n1, n2, el);
+              }
+              else {
+                  break;
+              }
+              e1--;
+              e2--;
+          }
+          // 只考虑元素新增和删除的情况
+          // abc -> abcd (i=3 e1=2 e2=3) abc -> dabc(i=0 e1=-1 e2=0)
+          // 只要 i > e1 表示新增
+          if (i > e1) {
+              if (i <= e2) {
+                  // 表示有新增的部分
+                  // 先根据 e2 取它的下一个元素 和 数组长度进行比较
+                  const nextPos = e2 + 1;
+                  const anchor = nextPos < c2.length ? c2[nextPos].el : null;
+                  while (i <= e2) {
+                      patch(null, c2[i], el, anchor);
+                      i++;
+                  }
+              }
+          }
+          else if (i > e2) {
+              // abcd -> abc
+              // i > e2 表示删除
+              while (i <= e1) {
+                  hostRemove(c1[i].el);
+                  i++;
+              }
+          }
+          else {
+              // 无规律的情况 diff 算法
+              // ab cde fg -> ab edch fg i=2 e1=4 e2=5
+              const s1 = i;
+              const s2 = i;
+              const keyToNewIndexMap = new Map();
+              for (let i = s2; i <= e2; i++) {
+                  const nextChild = c2[i];
+                  keyToNewIndexMap.set(nextChild.key, i);
+              }
+              const toBePatched = e2 - s2 + 1;
+              const newIndexToOldMapIndex = new Array(toBePatched).fill(0);
+              for (let i = s1; i <= e1; i++) {
+                  const prevChild = c1[i];
+                  let newIndex = keyToNewIndexMap.get(prevChild.key);
+                  if (!newIndex) {
+                      hostRemove(prevChild.el);
+                  }
+                  else {
+                      newIndexToOldMapIndex[newIndex - s2] = i + 1;
+                      patch(prevChild, c2[newIndex], el);
+                  }
+              }
+              // 倒叙插入
+              for (let i = toBePatched - 1; i >= 0; i--) {
+                  const nextIndex = s2 + i;
+                  const nextChild = c2[nextIndex];
+                  const anchor = nextIndex + 1 < c2.length ? c2[nextIndex + 1].el : null;
+                  // 新元素
+                  if (newIndexToOldMapIndex[i] == 0) {
+                      patch(null, nextChild, el, anchor);
+                  }
+                  else {
+                      hostInsert(nextChild.el, el, anchor);
+                  }
+              }
+          }
+      };
       const patchChildren = (n1, n2, el) => {
           const c1 = n1.children;
           const c2 = n2.children;
@@ -288,7 +379,10 @@
           }
           else {
               // 新的是数组
-              if (prevShapeFlag & 16 /* ShapeFlags.ARRAY_CHILDREN */) ;
+              if (prevShapeFlag & 16 /* ShapeFlags.ARRAY_CHILDREN */) {
+                  // 老的是数组 -> diff 算法
+                  patchKeyChildren(c1, c2, el);
+              }
               else {
                   // 老的可能是文本
                   if (prevShapeFlag & 8 /* ShapeFlags.TEXT_CHILDREN */) {
@@ -340,9 +434,9 @@
               }
           });
       }
-      const processElement = (n1, n2, container) => {
+      const processElement = (n1, n2, container, anchor = null) => {
           if (!n1) {
-              mountElement(n2, container);
+              mountElement(n2, container, anchor);
           }
           else {
               patchElement(n1, n2);
@@ -354,14 +448,14 @@
           }
       };
       const isSameVNodeType = (n1, n2) => n1.type === n2.type && n1.key === n2.key;
-      const patch = (n1, n2, container) => {
+      const patch = (n1, n2, container, anchor = null) => {
           const { shapeFlag } = n2;
           if (n1 && !isSameVNodeType(n1, n2)) {
               hostRemove(n1.el);
               n1 = null;
           }
           if (shapeFlag & 1 /* ShapeFlags.ELEMENT */) {
-              processElement(n1, n2, container);
+              processElement(n1, n2, container, anchor);
           }
           else if (shapeFlag & 4 /* ShapeFlags.STATEFUL_COMPONENT */) {
               processComponent(n1, n2, container);
